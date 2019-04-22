@@ -1,0 +1,443 @@
+Red wine quality by Abdullah Tarek
+========================================================
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, packages}
+# Load necessary packages
+library(ggplot2)
+library(GGally)
+library(memisc)
+library(rms)
+```
+
+```{r echo=FALSE, Load_the_Data}
+# Load the Data
+pf <- read.csv("wineQualityReds.csv" ,sep="," )
+pf <- subset(pf, select = -c(X))
+pf$quality<-factor(pf$quality)
+
+```
+
+## Introduction:
+> This Dataset contains 1599 red wines and 11 variables for each wine and thier corresponding qualty scores. The aim of this project is to find out wich attributes is most responsible for the quality of the wine, and to make a model that can predict the quality of the wine given its attributes.
+
+## Data wrangling
+> It is usefull to check for null values and deal with them in our dataset to avoid throwing off our analysis. by running the summary command we can check if there are any null values in all of the columns. As you can see bellow there are non. We are ready for next steps.
+
+```{r}
+head(pf)
+
+summary(pf)
+```
+
+
+## Univariate Plots Section
+
+> **Tip**: In this section, you should perform some preliminary exploration of
+your dataset. Run some summaries of the data and create univariate plots to
+understand the structure of the individual variables in your dataset. Don't
+forget to add a comment after each plot or closely-related group of plots!
+There should be multiple code chunks and text sections; the first one below is
+just to help you get started.
+
+```{r echo=FALSE, Quality_distribution}
+ggplot(aes(x= quality) , data= pf)+
+  geom_bar(color="#ead9bf" ,fill="#505772")
+
+table(pf$quality)
+```
+
+> Most of the dataset are of quality 5 or 6. This raises questions on how the dataset was collected. Maybe it was collected from average bars only where average wines are the main demand and expensive or very cheap wines are not ordered as much. This will make it hard for the model to get good scores at detecting wine quality scores.
+
+```{r echo=FALSE, fixed.acidity.histogram}
+ggplot(aes(fixed.acidity),data = pf)+
+        geom_histogram(color="#ead9bf" ,fill="#505772")+
+        scale_x_continuous(breaks = seq(0,16,1))
+
+summary(pf$fixed.acidity)
+
+```
+
+Fixed acidty is right skewed with some outliers that are on the far right. We can subset the dataset so that it does not include the outliers.
+
+```{r echo=FALSE, remove.fixed.acidity.outliers}
+#pf <- subset(pf , fixed.acidity<=14)
+```
+
+```{r echo=FALSE, volatile.acidity.histogram}
+ggplot(aes(volatile.acidity),data = pf)+
+        geom_histogram(color="#ead9bf" ,fill="#505772")+
+        scale_x_continuous(breaks=seq(0,1.6,0.1))
+
+summary(pf$volatile.acidity)
+```
+
+The volatile.acidty column is also left skewed with some outliers on the right of the graph. I will also remove those outliers.
+
+```{r echo=FALSE, remove.volatile.acidity.outliers}
+pf <- subset(pf , volatile.acidity<=1.2)
+```
+
+```{r echo=FALSE, citric.acid.histogram}
+ggplot(aes(citric.acid),data = pf)+
+        geom_histogram(color="#ead9bf" ,fill="#505772")+
+        scale_x_continuous(breaks=seq(0,1,0.1))
+
+summary(pf$citric.acid)
+```
+
+The citric acid column has a weird distribution. it is not skewed, bimodal nor normal. This column has outliers on the right. 
+
+```{r echo=FALSE, remove.citric.acid.outliers}
+pf <- subset(pf , volatile.acidity<=0.8)
+```
+
+```{r echo=FALSE, residual.sugar.histogram}
+ggplot(aes(residual.sugar),data = pf)+
+        geom_histogram(color="#ead9bf" ,fill="#505772")+
+        scale_x_continuous(breaks=seq(0,16,1))
+
+summary(pf$residual.sugar)
+```
+
+The residual.ugar column is also right skewed with outliers on the right of the graph.
+
+```{r echo=FALSE, residual.sugar.outliers}
+pf <- subset(pf , volatile.acidity<=9)
+```
+
+```{r echo=FALSE, chlorides.histogram}
+ggplot(aes(chlorides),data = pf)+
+        geom_histogram(color="#ead9bf" ,fill="#505772")+
+        scale_x_continuous(breaks=seq(0,0.6,0.05))
+
+summary(pf$chlorides)
+```
+
+The chlorides column is also right skewed with some outliers.
+
+```{r echo=FALSE, chlorides.outliers}
+pf <- subset(pf , chlorides<=9)
+```
+
+```{r echo=FALSE, free.sulfur.dioxide.histogram}
+ggplot(aes(free.sulfur.dioxide),data = pf)+
+        geom_histogram(color="#ead9bf" ,fill="#505772")+
+        scale_x_continuous(breaks=seq(0,70,2))
+summary(pf$free.sulfur.dioxide)
+```
+
+free.sulfer.dioxide is right skewed with outliers on the right.
+
+```{r echo=FALSE, free.sulfur.dioxide.outliers}
+pf <- subset(pf , free.sulfur.dioxide<=58)
+```
+
+```{r echo=FALSE, total.sulfur.dioxide.histogram}
+ggplot(aes(free.sulfur.dioxide),data = pf)+
+        geom_histogram(color="#ead9bf" ,fill="#505772")+
+        scale_x_continuous(breaks=seq(0,60,2))
+
+summary(pf$total.sulfur.dioxide)
+```
+
+free.sulfur.dioxide is right skewed.
+
+```{r echo=FALSE, density.histogram}
+ggplot(aes(density),data = pf)+
+        geom_histogram(color="#ead9bf" ,fill="#505772")
+
+summary(pf$density)
+```
+
+The density columns is normally distributed with mean 0.997.
+
+```{r echo=FALSE, pH.histogram}
+ggplot(aes(pH),data = pf)+
+        geom_histogram(color="#ead9bf" ,fill="#505772")
+
+summary(pf$pH)
+```
+
+The ph column is normally ditributed with a mean of 3.3
+
+```{r echo=FALSE, sulphates.histogram}
+ggplot(aes(sulphates),data = pf)+
+        geom_histogram(color="#ead9bf" ,fill="#505772")+
+        scale_x_continuous(breaks=seq(0,2,0.1))
+  
+
+summary(pf$sulphates)
+```
+
+sulphates column is right skewed with some outliers on the right.
+
+```{r echo=FALSE, sulphates.outliers}
+pf <- subset(pf , sulphates<=1.4)
+```
+
+```{r echo=FALSE, alcohol.histogram}
+ggplot(aes(alcohol),data = pf)+
+        geom_histogram(color="#ead9bf" ,fill="#505772")
+  
+summary(pf$alcohol)
+```
+
+The alcohol column is right skewed.
+
+### Univariate Analysis summary
+1. most of the wines in the dataset have a quality of 5 or 6. This might effect the regression model. Also This raises questions about how the data was collected.
+
+2. Alot of the columns in the dataset were right skewed with some outliers. Those outliers can be dealt with by removal.
+
+3. There are some normally disributed columns like PH, and denity those might be usefull for any inferential statistics. 
+
+## Bivariate Analysis
+
+First we will see the relationship between all columns and the quality column. since this is a qualitative, quantitative comparison, it makes sense to use box-plots.
+
+```{r echo=FALSE, Bivariate_Box_Plots}
+
+fixed.acidity.boxplot <- ggplot(aes(x=quality , y=fixed.acidity),data = pf)+
+                            geom_boxplot()+
+                            stat_summary(fun.y='mean', geom='point' , shape=4 )+  
+                            scale_y_continuous(breaks=seq(0,16,1))
+
+volatile.acidity.boxplot <- ggplot(aes(x=quality , y=volatile.acidity),data = pf)+
+                              geom_boxplot()+
+                              stat_summary(fun.y='mean', geom='point' , shape=4 )
+
+citric.acid.boxplot <- ggplot(aes(x=quality , y=citric.acid),data = pf)+
+                              geom_boxplot()+
+                              stat_summary(fun.y='mean', geom='point' , shape=4 )
+
+residual.sugar.boxplot <- ggplot(aes(x=quality , y=residual.sugar),data = pf)+
+                              geom_boxplot()+
+                              coord_cartesian(ylim=c(0,4))+
+                              stat_summary(fun.y='mean', geom='point' , shape=4 )
+
+
+chlorides.boxplot <- ggplot(aes(x=quality , y=chlorides),data = pf)+
+                              geom_boxplot()+
+                              coord_cartesian(ylim=c(0.05,0.2))+
+                              stat_summary(fun.y='mean', geom='point' , shape=4 )
+
+free.sulfur.dioxide.boxplot <- ggplot(aes(x=quality , y=free.sulfur.dioxide),data = pf)+
+                              geom_boxplot()+
+                              stat_summary(fun.y='mean', geom='point' , shape=4 )
+
+total.sulfur.dioxide.boxplot <- ggplot(aes(x=quality , y=total.sulfur.dioxide),data = pf)+
+                              geom_boxplot()+
+                              stat_summary(fun.y='mean', geom='point' , shape=4 )
+
+density.boxplot <- ggplot(aes(x=quality , y=density),data = pf)+
+                              geom_boxplot()+
+                              stat_summary(fun.y='mean', geom='point' , shape=4 )
+
+PH.boxplot <- ggplot(aes(x=quality , y=pH),data = pf)+
+                              geom_boxplot()+
+                              stat_summary(fun.y='mean', geom='point' , shape=4 )
+
+sulphates.boxplot <- ggplot(aes(x=quality , y=sulphates),data = pf)+
+                              geom_boxplot()+
+                              coord_cartesian(ylim = c(0.3,1))+
+                              stat_summary(fun.y='mean', geom='point' , shape=4 )
+
+alcohol.boxplot <- ggplot(aes(x=quality , y=alcohol),data = pf)+
+                              geom_boxplot()+
+                              stat_summary(fun.y='mean', geom='point' , shape=4 )
+
+
+gridExtra::grid.arrange(fixed.acidity.boxplot,
+                        volatile.acidity.boxplot,
+                        citric.acid.boxplot,
+                        residual.sugar.boxplot,
+                        chlorides.boxplot,
+                        free.sulfur.dioxide.boxplot,
+                        total.sulfur.dioxide.boxplot,
+                        density.boxplot,
+                        PH.boxplot,
+                        sulphates.boxplot,
+                        alcohol.boxplot,
+                        ncol=4)
+
+```
+
+### Summary of the box-plots:
+1. fixed_acidity: fixed acidty doesn't tell much about the wine's quality.
+2. volatile_acidity: The box plots show a negative correlation between volatile_acidity and quality.
+3. citric_acid: The box-plots show a positive correlation between citric_acid and quality.
+4. residual_sugar: The residual sugar attribute doesn't tell much about the quality if the wine.
+5. chlorides: The box-plots show a negative correlation between chlorides and quality.
+6. free_sulfer_dioxide: The free_sulfer_dioxide attribute doesn't tell much about the qulaty of the wine.
+7. total_free_sulfer_dioxide: The total_free_sulfer_dioxide attribute doesn't tell much about the qulaty of the wine.
+8. density: The box plots show a negative correlation between density and quality.
+9. pH: The box plots show a negative correlation between pH and quality.
+10. sulpahtes: The box-plots show a positive correlation between sulpahtes and quality.
+11. alcohol: The box-plots show a positive correlation between alcohol and quality.
+
+```{r echo=FALSE, correalation}
+pftmp <- pf
+pftmp$quality <- as.numeric(pftmp$quality)
+res<- cor(pftmp)
+round(res,2)
+```
+
+According to the correlation matrix above alcohol have the highest correlation with quality, followed by volatile acidity, followed by sulphates, and the citric acid.   
+We can also notice some good relationships like fixed acidity and pH.
+
+```{r}
+ggplot(aes(x=fixed.acidity , y=pH),data=pf)+
+  geom_point()+
+  geom_smooth()
+```
+
+this plot shows the negative correlation between pH and fixed acidity.
+
+# Multivariate Plots Section
+
+```{r echo=FALSE, density_alcohol}
+ggplot(aes(x=density , y=alcohol ),data = pf)+
+  geom_point(aes(color=quality),alpha=1/2 )+
+  scale_y_sqrt()
+  
+```
+
+This plot shows that of wines with quality 5 have alcohol levels lower than 10 and most of the wines woth qualitylevel 6 are above 10.
+
+```{r echo=FALSE, Heat_map}
+ggplot(aes(x=fixed.acidity , y=pH ),data = pf)+
+  geom_point(aes(color=quality),alpha=1/2 )+
+  scale_y_sqrt()
+  
+```
+
+Here The plot doesn't show any noticeable differences in the qualites.
+
+### Logistic regression model   
+
+Acordiing to the analysis I will make a logistic regression model with the columns that have an effect on quality.
+
+```{r echo=FALSE, Multivariate_Plots}
+
+
+m1 <- lrm(I(quality)~I(alcohol) , data=pf)
+m2 <- update(m1, ~. + volatile.acidity)
+m3 <- update(m2, ~. + sulphates)
+m4 <- update(m3, ~. + citric.acid )
+
+print(m4)
+```
+
+# Multivariate Analysis
+
+### Talk about some of the relationships you observed in this part of the \
+investigation. Were there features that strengthened each other in terms of \
+looking at your feature(s) of interest?
+
+### Were there any interesting or surprising interactions between features?
+
+### OPTIONAL: Did you create any models with your dataset? Discuss the \
+strengths and limitations of your model.
+
+------
+
+# Final Plots and Summary
+
+> **Tip**: You've done a lot of exploration and have built up an understanding
+of the structure of and relationships between the variables in your dataset.
+Here, you will select three plots from all of your previous exploration to
+present here as a summary of some of your most interesting findings. Make sure
+that you have refined your selected plots for good titling, axis labels (with
+units), and good aesthetic choices (e.g. color, transparency). After each plot,
+make sure you justify why you chose each plot by describing what it shows.
+
+### Plot One
+```{r echo=FALSE, Plot_One}
+
+fixed.acidity.boxplot <- ggplot(aes(x=quality , y=fixed.acidity),data = pf)+
+                            geom_boxplot()+
+                            stat_summary(fun.y='mean', geom='point' , shape=4 )+  
+                            scale_y_continuous(breaks=seq(0,16,1))
+
+volatile.acidity.boxplot <- ggplot(aes(x=quality , y=volatile.acidity),data = pf)+
+                              geom_boxplot()+
+                              stat_summary(fun.y='mean', geom='point' , shape=4 )
+
+citric.acid.boxplot <- ggplot(aes(x=quality , y=citric.acid),data = pf)+
+                              geom_boxplot()+
+                              stat_summary(fun.y='mean', geom='point' , shape=4 )
+
+residual.sugar.boxplot <- ggplot(aes(x=quality , y=residual.sugar),data = pf)+
+                              geom_boxplot()+
+                              coord_cartesian(ylim=c(0,4))+
+                              stat_summary(fun.y='mean', geom='point' , shape=4 )
+
+
+chlorides.boxplot <- ggplot(aes(x=quality , y=chlorides),data = pf)+
+                              geom_boxplot()+
+                              coord_cartesian(ylim=c(0.05,0.2))+
+                              stat_summary(fun.y='mean', geom='point' , shape=4 )
+
+free.sulfur.dioxide.boxplot <- ggplot(aes(x=quality , y=free.sulfur.dioxide),data = pf)+
+                              geom_boxplot()+
+                              stat_summary(fun.y='mean', geom='point' , shape=4 )
+
+total.sulfur.dioxide.boxplot <- ggplot(aes(x=quality , y=total.sulfur.dioxide),data = pf)+
+                              geom_boxplot()+
+                              stat_summary(fun.y='mean', geom='point' , shape=4 )
+
+density.boxplot <- ggplot(aes(x=quality , y=density),data = pf)+
+                              geom_boxplot()+
+                              stat_summary(fun.y='mean', geom='point' , shape=4 )
+
+PH.boxplot <- ggplot(aes(x=quality , y=pH),data = pf)+
+                              geom_boxplot()+
+                              stat_summary(fun.y='mean', geom='point' , shape=4 )
+
+sulphates.boxplot <- ggplot(aes(x=quality , y=sulphates),data = pf)+
+                              geom_boxplot()+
+                              coord_cartesian(ylim = c(0.3,1))+
+                              stat_summary(fun.y='mean', geom='point' , shape=4 )
+
+alcohol.boxplot <- ggplot(aes(x=quality , y=alcohol),data = pf)+
+                              geom_boxplot()+
+                              stat_summary(fun.y='mean', geom='point' , shape=4 )
+
+
+gridExtra::grid.arrange(fixed.acidity.boxplot,
+                        volatile.acidity.boxplot,
+                        citric.acid.boxplot,
+                        residual.sugar.boxplot,
+                        chlorides.boxplot,
+                        free.sulfur.dioxide.boxplot,
+                        total.sulfur.dioxide.boxplot,
+                        density.boxplot,
+                        PH.boxplot,
+                        sulphates.boxplot,
+                        alcohol.boxplot,
+                        ncol=4)
+
+
+```
+
+### Description One
+
+This plot was crutial to see realtionships between the quality and each attribute. we noticed that volatile.acidity, citric acid,sulphates, alcohol,and chlorides are correlated with quality.
+
+### Plot Two
+```{r echo=FALSE, Plot_Two}
+ggplot(aes(x=density , y=alcohol ),data = pf)+
+  geom_point(aes(color=quality),alpha=1/2 )+
+  scale_y_sqrt()
+
+```
+
+### Description Two
+
+This Plot helped us deffrentiate between two qualities that are most abundant in the dataset. It showed us that most of the wines with quality of 5 have alcohol levels bellow 10 and most of the wines with quality of 6 had an alcohol level above 10.
+
+------
+
+# Reflection
+
+Although there were some variables with good correlation with quality we were not able to make a good model, This is partailly because of the nature of the data-set. Most of the qualities of wine were either 5 or 6 and all others had a very small count in comparison to 5 or 6.
